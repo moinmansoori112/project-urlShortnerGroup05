@@ -25,13 +25,13 @@ const shortner = async (req, res) => {
         const data = req.body
         const { urlCode, longUrl } = data
 
-        if (!isValid(urlCode)) {
-            return res.status(400).send({ status: false, msg: "please enter urlcode" })
-        }
+        // if (!isValid(urlCode)) {
+        //     return res.status(400).send({ status: false, msg: "please enter urlcode" })
+        // }
         const findUrl = await userModel.findOne({ urlCode })
-        if (findUrl) {
-            return res.status(400).send({ status: false, msg: "this urlcode already used please enter some other urlcode" })
-        }
+        // if (findUrl) {
+        //     return res.status(400).send({ status: false, msg: "this urlcode already used please enter some other urlcode" })
+        // }
         if (!isValid(longUrl)) {
             return res.status(400).send({ status: false, msg: "please enter longUrl" })
         }
@@ -40,11 +40,11 @@ const shortner = async (req, res) => {
             return res.status(401).send({ status: false, msg: "base url is not valid" })
         }
 
-        const short = shortId.generate()
+        var short = shortId.generate()
 
         if (validUrl.isUri(longUrl)) {
 
-            let url = await userModel.findOne({ longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0 })
+            let url = await userModel.findOne({ longUrl })//.select({ createdAt: 0, updatedAt: 0, __v: 0 })
             if (url) {
                 return res.status(200).send({ status: true, msg: "this URL is already shorted" })
 
@@ -52,14 +52,15 @@ const shortner = async (req, res) => {
 
             let shortedUrl = baseUrl + "/" + short
 
-            let input = { longUrl: data.longUrl, shortUrl: shortedUrl, urlCode: data.urlCode }
+            let input = { longUrl: data.longUrl, shortUrl: shortedUrl, urlCode:short }
 
             const created = await userModel.create(input)
 
             const output = {
+                urlCode:created.urlCode,
                 longUrl: created.longUrl,
                 shortUrl: created.shortUrl,
-                urlCode: created.urlCode
+                
             }
             return res.status(201).send({ status: true, msg: "URL shorted", data: output })
 
