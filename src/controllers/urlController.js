@@ -2,7 +2,7 @@ const express = require("express")
 const validUrl = require("valid-url")
 const shortId = require("shortid")
 //const config=require("config")
-const userModel = require("../models/userModel")
+const urlModel = require("../models/urlModel")
 //const { isValid } = require("shortid")
 
 const isValid = (value) => {
@@ -12,7 +12,7 @@ const isValid = (value) => {
 
     else {
 
-        return true
+        return true                       
     }
 }
 
@@ -28,7 +28,7 @@ const shortner = async (req, res) => {
         // if (!isValid(urlCode)) {
         //     return res.status(400).send({ status: false, msg: "please enter urlcode" })
         // }
-        const findUrl = await userModel.findOne({ urlCode })
+        const findUrl = await urlModel.findOne({ urlCode })
         // if (findUrl) {
         //     return res.status(400).send({ status: false, msg: "this urlcode already used please enter some other urlcode" })
         // }
@@ -44,17 +44,17 @@ const shortner = async (req, res) => {
 
         if (validUrl.isUri(longUrl)) {
 
-            let url = await userModel.findOne({ longUrl })//.select({ createdAt: 0, updatedAt: 0, __v: 0 })
-            if (url) {
-                return res.status(200).send({ status: true, msg: "this URL is already shorted" })
+            // let url = await urlModel.findOne({ longUrl })//.select({ createdAt: 0, updatedAt: 0, __v: 0 })
+            // if (url) {
+            //     return res.status(200).send({ status: true, msg: "this URL is already shorted" })
 
-            }
+            // }
 
             let shortedUrl = baseUrl + "/" + short
 
             let input = { longUrl: data.longUrl, shortUrl: shortedUrl, urlCode:short }
 
-            const created = await userModel.create(input)
+            const created = await urlModel.create(input)
 
             const output = {
                 urlCode:created.urlCode,
@@ -79,14 +79,14 @@ const shortner = async (req, res) => {
 
 const getUrl = async (req, res) => {
     try{
-        const data = req.params
+        const data = req.params.urlCode
         
-    if (!data) {
+    if (!isValid(data)) {
         return res.status(400).send({ status: false, msg: "please enter urlcode" })
     }
     const{urlCode}=data
 
-    const findUrl=await userModel.findOne({urlCode:urlCode})
+    const findUrl=await urlModel.findOne({urlCode:urlCode})
 
     if(!findUrl){
         return res.status(404).send({status:false,msg:"this url is not available"})
