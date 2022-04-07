@@ -61,9 +61,18 @@ const shortner = async (req, res) => {
             return res.status(400).send({ status: false, msg: "please enter longUrl" })
         }
 
-        if(!(/^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:[/?#]\S*)?$/.test(longUrl))){
-            return res.status(400).send({msg:false,msg:"URL is not valid "})
+        if (!(/^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:[/?#]\S*)?$/.test(longUrl))) {
+            return res.status(400).send({ msg: false, msg: "URL is not valid " })
         }
+
+        // let cahcedUrlCode = await GET_ASYNC(`${req.body}`)
+        // console.log("this  is also come from cache memory")
+
+        // if (cahcedUrlCode) {
+        //     parseData = JSON.parse(cahcedUrlCode)
+        //     console.log("this is come from cache")
+        //     return res.status(302).redirect(parseData.longUrl)
+        // }
 
 
 
@@ -71,6 +80,16 @@ const shortner = async (req, res) => {
             return res.status(401).send({ status: false, msg: "base url is not valid" })
         }
         var short = shortId.generate().toLowerCase()
+
+        let cahcedUrlCode = await GET_ASYNC(`${req.body}`)
+
+        console.log("this  is also come from cache memory")
+
+        if (cahcedUrlCode) {
+            parseData = JSON.parse(cahcedUrlCode)
+            console.log("this is come from cache")
+            return res.status(302).redirect(parseData.longUrl)
+        }
 
         if (validUrl.isUri(longUrl)) {
 
@@ -93,10 +112,12 @@ const shortner = async (req, res) => {
 
 
             }
+            await SET_ASYNC(`${longUrl}`, JSON.stringify(output))
             return res.status(201).send({ status: true, msg: "URL shorted", data: output })
 
 
         }
+
         else {
             return res.status(401).send({ status: false, msg: "URL not valid" })
         }
@@ -121,6 +142,7 @@ const getUrl = async function (req, res) {
 
         if (cahcedUrlCode) {
             parseData = JSON.parse(cahcedUrlCode)
+            console.log("this is come from cache")
             return res.status(302).redirect(parseData.longUrl)
         }
 
