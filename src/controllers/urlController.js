@@ -4,6 +4,33 @@ const shortId = require("shortid")
 //const config=require("config")
 const urlModel = require("../models/urlModel")
 //const { isValid } = require("shortid")
+const redis=require("redis")
+const { promisify } = require("util");
+
+//Connect to redis
+//Connect to redis
+const redisClient = redis.createClient(
+    12354,//portnu
+    "redis-12354.c212.ap-south-1-1.ec2.cloud.redislabs.com",          //string
+    { no_ready_check: true }
+  );
+  redisClient.auth("CmfJZXArfE6eSUjfyXxzmgCHtPKXuXFr", function (err) { ///password
+    if (err) throw err;
+  });
+  
+  redisClient.on("connect", async function () {
+    console.log("Connected to Redis..");
+  });
+  
+  //1. connect to the server
+  //2. use the commands :
+  
+  //Connection setup for redis
+  
+  const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
+  const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
+
+
 
 const isValid = (value) => {
     if (typeof value === "undefined" || value === null) return false
@@ -16,50 +43,45 @@ const isValid = (value) => {
     }
 }
 
-
-
 const baseUrl = "http://localhost:3000"
 
 const shortner = async (req, res) => {
     try {
         const data = req.body
         const { urlCode, longUrl } = data
-
-        // if (!isValid(urlCode)) {
-        //     return res.status(400).send({ status: false, msg: "please enter urlcode" })
-        // }
-        const findUrl = await urlModel.findOne({ urlCode })
-        // if (findUrl) {
-        //     return res.status(400).send({ status: false, msg: "this urlcode already used please enter some other urlcode" })
-        // }
         if (!isValid(longUrl)) {
             return res.status(400).send({ status: false, msg: "please enter longUrl" })
         }
+    //    if(!(/^(http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/.test(longUrl))){
+    //         return res.status(400).send({msg:false,msg:"URL is not valid "})
+    //     }
 
         if (!validUrl.isUri(baseUrl)) {
             return res.status(401).send({ status: false, msg: "base url is not valid" })
         }
+        
 
-        var short = shortId.generate()
+        var short = shortId.generate().toLowerCase()
 
         if (validUrl.isUri(longUrl)) {
 
-            // let url = await urlModel.findOne({ longUrl })//.select({ createdAt: 0, updatedAt: 0, __v: 0 })
-            // if (url) {
-            //     return res.status(200).send({ status: true, msg: "this URL is already shorted" })
+            let url = await urlModel.findOne({ longUrl }).select({ createdAt: 0, updatedAt: 0, __v: 0 ,_id:0})
+            if (url) {
+                return res.status(200).send({ status: true, data:url})
 
-            // }
-
-            let shortedUrl = baseUrl + "/" + short
+            }
+        
+          let shortedUrl = baseUrl + "/" + short
 
             let input = { longUrl: data.longUrl, shortUrl: shortedUrl, urlCode:short }
 
             const created = await urlModel.create(input)
 
             const output = {
-                urlCode:created.urlCode,
-                longUrl: created.longUrl,
-                shortUrl: created.shortUrl,
+               longUrl: created.longUrl,
+               shortUrl: created.shortUrl,
+               urlCode:created.urlCode,
+              
                 
             }
             return res.status(201).send({ status: true, msg: "URL shorted", data: output })
@@ -77,57 +99,38 @@ const shortner = async (req, res) => {
 
 }
 
-const getUrl = async (req, res) => {
+
+const getUrl = async function(req,res){
     try{
-        const data = req.params.urlCode
-        
-    if (!isValid(data)) {
-        return res.status(400).send({ status: false, msg: "please enter urlcode" })
+        const code = req.params.urlCode;
+
+        if(!isValid(code)){
+            return res.status(400).send({status : false , msg : "Please pass Url Code In Params"})
+        }
+
+        let cahcedUrlCode = await GET_ASYNC(`${req.params.urlCode}`)
+
+        if(cahcedUrlCode) {
+            parseData = JSON.parse(cahcedUrlCode)
+            return res.status(302).redirect(parseData.longUrl)
+        }
+
+        const data = await urlModel.findOne({urlCode: code}).select({createdAt:0,updatedAt:0,__v:0})
+        if(!data){
+            return res.status(404).send({status:false,msg : "No Such URL found"})        
+        }
+
+        else{
+            await SET_ASYNC(`${req.params.urlCode}`, JSON.stringify(data))
+
+            return res.status(302).redirect(data.longUrl)
+
+        }
     }
-    const{urlCode}=data
-
-    const findUrl=await urlModel.findOne({urlCode:urlCode})
-
-    if(!findUrl){
-        return res.status(404).send({status:false,msg:"this url is not available"})
+    catch(error){
+        return res.status(500).send({status: false,msg:error.message})
     }
-
-    return res.status(301).redirect(findUrl.longUrl)
-    }
-    catch(err){
-        return res.status(500).send({status:false,msg:err.message})
-    }
-
-
 }
-
-// const getUrl = async (req, res) => {
-//     try {
-//         const { urlCode } = req.params;
-
-//         if (!isValid(urlCode)) return res.status(400).send({ status: false, message: "Invalid Url" })
-
-//         const result = await userModel.findOne({ urlCode: urlCode })
-//         if (!result) {
-//             return res.status(404).send({ status: false, msg: "Url doesn't exist" });
-//         }
-
-//         res.status(301).redirect(result.longUrl)
-
-
-//     } catch (error) {
-//         res.status(500).send({ status: true, msg: error.message })
-//     }
-// }
-
-
-
-
-
-
-
-
-
 
 
 module.exports.getUrl=getUrl
