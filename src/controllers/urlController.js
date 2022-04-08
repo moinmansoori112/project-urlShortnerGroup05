@@ -81,15 +81,15 @@ const shortner = async (req, res) => {
         }
         var short = shortId.generate().toLowerCase()
 
-        let cahcedUrlCode = await GET_ASYNC(`${req.body}`)
+        // let cahcedUrlCode = await GET_ASYNC(`${req.body}`)
 
-        console.log("this  is also come from cache memory")
+        // console.log("this  is also come from cache memory")
 
-        if (cahcedUrlCode) {
-            parseData = JSON.parse(cahcedUrlCode)
-            console.log("this is come from cache")
-            return res.status(302).redirect(parseData.longUrl)
-        }
+        // if (cahcedUrlCode) {
+        //     parseData = JSON.parse(cahcedUrlCode)
+        //     console.log("this is come from cache")
+        //     return res.status(302).redirect(parseData.longUrl)
+        // }
 
         if (validUrl.isUri(longUrl)) {
 
@@ -112,7 +112,7 @@ const shortner = async (req, res) => {
 
 
             }
-            await SET_ASYNC(`${longUrl}`, JSON.stringify(output))
+            await SET_ASYNC(`${short}`, JSON.stringify(created))
             return res.status(201).send({ status: true, msg: "URL shorted", data: output })
 
 
