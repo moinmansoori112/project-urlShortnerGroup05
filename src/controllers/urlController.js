@@ -55,7 +55,7 @@ const shortner = async (req, res) => {
     try {
         const baseUrl = "http://localhost:3000"
         const data = req.body
-        const { urlCode, longUrl } = data
+        const { longUrl } = data
 
         if (!isValid(longUrl)) {
             return res.status(400).send({ status: false, msg: "please enter longUrl" })
@@ -79,6 +79,7 @@ const shortner = async (req, res) => {
         if (!validUrl.isUri(baseUrl)) {
             return res.status(401).send({ status: false, msg: "base url is not valid" })
         }
+
         var short = shortId.generate().toLowerCase()
 
         // let cahcedUrlCode = await GET_ASYNC(`${req.body}`)
@@ -110,7 +111,6 @@ const shortner = async (req, res) => {
                 shortUrl: created.shortUrl,
                 urlCode: created.urlCode,
 
-
             }
             await SET_ASYNC(`${short}`, JSON.stringify(created))
             return res.status(201).send({ status: true, msg: "URL shorted", data: output })
@@ -138,10 +138,10 @@ const getUrl = async function (req, res) {
             return res.status(400).send({ status: false, msg: "Please pass Url Code In Params" })
         }
 
-        let cahcedUrlCode = await GET_ASYNC(`${req.params.urlCode}`)
+        let cachedUrlCode = await GET_ASYNC(`${req.params.urlCode}`)
 
-        if (cahcedUrlCode) {
-            parseData = JSON.parse(cahcedUrlCode)
+        if (cachedUrlCode) {
+            parseData = JSON.parse(cachedUrlCode)
             console.log("this is come from cache")
             return res.status(302).redirect(parseData.longUrl)
         }
